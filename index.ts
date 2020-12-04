@@ -84,9 +84,17 @@ export default class HyperObjects {
     }
 
     async appendObject(data) {
-        const block = Messages.Block.encode({ content: { dataBlock: data } })
-        const index = await this.feed.length()
-        await this.feed.append(block)
+        let index
+        const self = this
+        this.feed.criticalSection(async lockKey => {
+            index = await self.feed.length()
+            if(self.onWrite) {
+                data = self.onWrite(index, data)
+            }
+            const block = Messages.Block.encode({ content: { dataBlock: data } })
+            await self.feed.append(block, {lockKey})
+        })
+        
         return index
     }
 
