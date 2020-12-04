@@ -1,0 +1,29 @@
+{
+  "name": "hyperobjects",
+  "version": "0.0.1",
+  "description": "object store built on hypercore",
+  "main": "index.js",
+  "scripts": {
+    "generate_protobuf": "protocol-buffers -o ./messages.js ./schema.proto"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fsteff/hyperobjects.git"
+  },
+  "keywords": [
+    "hypercore",
+    "p2p",
+    "db"
+  ],
+  "author": "Stefan Fixl (Fsteff)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fsteff/hyperobjects/issues"
+  },
+  "homepage": "https://github.com/fsteff/hyperobjects#readme",
+  "dependencies": {
+    "@types/codecs": "^2.2.0",
+    "@types/streamx": "^2.9.0",
+    "codecs": "^2.2.0"
+  }
+}
