@@ -2,7 +2,6 @@
   "name": "hyperobjects",
   "version": "0.0.1",
   "description": "object store built on hypercore",
-  "main": "index.js",
   "scripts": {
     "generate_protobuf": "protocol-buffers -o ./messages.js ./schema.proto"
   },

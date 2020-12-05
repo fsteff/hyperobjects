@@ -44,10 +44,10 @@ export class AsyncFeed {
   }
 
   async length(): Promise<number> {
-    while (pending.length > 0) {
+    while (this.pending.length > 0) {
       await Promise.all(this.pending)
     }
-    if (pending.length > 0) throw new Error('pending should be zero!')
+    if (this.pending.length > 0) throw new Error('pending should be zero!')
     return this.feed.length
   }
 
@@ -70,11 +70,10 @@ export class AsyncFeed {
   async criticalSection (critical: (lockKey: Promise<void>) => void) {
     const self = this
     while(this.lock) await this.lock
-    const lock = this.lock = new Promise(section)
-    async function section(resolve: Function) {
-      await critical(lock)
-      resolve()
-    }
+    let resolveFoo
+    const lock = this.lock = new Promise((resolve) => {resolveFoo = resolve })
+    await critical(lock)
+    await resolveFoo()
     await this.lock
     this.lock = null
   }

@@ -1,13 +1,12 @@
-import HyperObjects from ".."
-import { TransactionMarker } from "./types"
+import BlockStorage from "./BlockStorage"
+import { TransactionMarker, CreatedObject, ChangedObject, DeletedObject } from "./types"
 
 export type Collision = {id: number, index1: number, index2: number}
-export type Change = {id: number, index: number}
-export type Changes = {diff: Array<Change>, marker: TransactionMarker}
+export type Changes = {diff: Array<ChangedObject>, marker: TransactionMarker}
 export type Diff = {
-    created: Array<{index: number}>
-    changed: Array<Change>
-    deleted: Array<{id: number}>,
+    created: Array<CreatedObject>
+    changed: Array<ChangedObject>
+    deleted: Array<DeletedObject>,
     marker: TransactionMarker
 }
 
@@ -16,10 +15,10 @@ export interface MergeHandler {
 }
 
 export class SimpleMergeHandler implements MergeHandler {
-    private db: HyperObjects
+    private store: BlockStorage
 
-    constructor(db: HyperObjects) {
-        this.db = db
+    constructor(store: BlockStorage) {
+        this.store = store
     }
 
     public async merge(latest: Changes, current: Diff, collisions: Array<Collision>, head: number) {
@@ -29,12 +28,20 @@ export class SimpleMergeHandler implements MergeHandler {
 
         const changes = latest.diff.concat(current.changed)
         const self = this
-        return this.db.feed.criticalSection(lockKey => {
+        return this.store.feed.criticalSection(async lockKey => {
             let ctr = Math.max(latest.marker.objectCtr, current.marker.objectCtr)
-            for(const {index} of current.created) {
-                changes.push({id: ++ctr, index})
+            for(const created of current.created) {
+                const id = ++ctr
+                created.id = id
+                changes.push({id, index: created.index})
             }
-            return self.db.saveChanges(changes, head, lockKey)
+            try {
+                await self.store.saveChanges(changes, latest.marker, head, lockKey)
+                current.created.forEach(c => c.defId.resolve(<number>c.id))
+            } catch (err) {
+                current.created.forEach(c => c.defId.reject(err))
+                throw err
+            }
         })
     }
 }
