@@ -250,6 +250,9 @@ function defineTransactionMarker () {
     if (!defined(obj.sequenceNr)) throw new Error("sequenceNr is required")
     var len = encodings.varint.encodingLength(obj.sequenceNr)
     length += 1 + len
+    if (!defined(obj.objectCtr)) throw new Error("objectCtr is required")
+    var len = encodings.varint.encodingLength(obj.objectCtr)
+    length += 1 + len
     if (defined(obj.timestamp)) {
       var len = encodings.varint.encodingLength(obj.timestamp)
       length += 1 + len
@@ -265,8 +268,12 @@ function defineTransactionMarker () {
     buf[offset++] = 8
     encodings.varint.encode(obj.sequenceNr, buf, offset)
     offset += encodings.varint.encode.bytes
+    if (!defined(obj.objectCtr)) throw new Error("objectCtr is required")
+    buf[offset++] = 16
+    encodings.varint.encode(obj.objectCtr, buf, offset)
+    offset += encodings.varint.encode.bytes
     if (defined(obj.timestamp)) {
-      buf[offset++] = 16
+      buf[offset++] = 24
       encodings.varint.encode(obj.timestamp, buf, offset)
       offset += encodings.varint.encode.bytes
     }
@@ -281,12 +288,14 @@ function defineTransactionMarker () {
     var oldOffset = offset
     var obj = {
       sequenceNr: 0,
+      objectCtr: 0,
       timestamp: 0
     }
     var found0 = false
+    var found1 = false
     while (true) {
       if (end <= offset) {
-        if (!found0) throw new Error("Decoded message is not valid")
+        if (!found0 || !found1) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -300,6 +309,11 @@ function defineTransactionMarker () {
         found0 = true
         break
         case 2:
+        obj.objectCtr = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
+        found1 = true
+        break
+        case 3:
         obj.timestamp = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
         break

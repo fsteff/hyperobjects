@@ -25,6 +25,10 @@ export default class Transaction {
             .then(({ block, index }) => { return {marker: block, head: index}})
     }
 
+    async ready() {
+        await this.transaction
+    }
+
     async create (value?: any) {
         let index = 0
         if(value) {

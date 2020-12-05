@@ -23,7 +23,9 @@ export class HyperObjects {
 
     async transaction() {
         const head = await this.feed.length()
-        return new Transaction(this.storage, head, {valueEncoding: this.valueEncoding})
+        const tr = new Transaction(this.storage, head, {valueEncoding: this.valueEncoding})
+        await tr.ready()
+        return tr
     }
 
     

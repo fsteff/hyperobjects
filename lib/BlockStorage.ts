@@ -10,11 +10,27 @@ export default class BlockStorage {
     readonly feed: AsyncFeed
     readonly onWrite?: RWFunction
     readonly onRead?: RWFunction
+    private readyPromise: Promise<void>
     
     constructor (feed: AsyncFeed, onWrite?: RWFunction, onRead?: RWFunction) {
         this.feed = feed
         this.onWrite = onWrite
         this.onRead = onRead
+        const self = this
+        this.readyPromise = async function() {
+            const length = await feed.length()
+            if(length === 1) {
+                const indexNode = self.createIndexNode(1)
+                feed.criticalSection(async lockKey => {
+                    await feed.append(Messages.Block.encode({content: {indexNode}}))
+                    await self.appendTransactionMarker(1, 0, lockKey)
+                })
+            }
+        }()
+    }
+
+    public async ready() {
+        return this.readyPromise
     }
 
     public async getObjectIndex(id: number, head?: number): Promise<number> {

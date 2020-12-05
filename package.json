@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "object store built on hypercore",
   "scripts": {
-    "generate_protobuf": "protocol-buffers -o ./messages.js ./schema.proto"
+    "generate_protobuf": "protocol-buffers -o ./dist/messages.js ./schema.proto && copyfiles messages.js dist"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "dependencies": {
     "@types/codecs": "^2.2.0",
     "@types/streamx": "^2.9.0",
-    "codecs": "^2.2.0"
+    "codecs": "^2.2.0",
+    "copyfiles": "^2.4.1"
   }
 }
