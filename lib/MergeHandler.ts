@@ -31,17 +31,13 @@ export class SimpleMergeHandler implements MergeHandler {
         return this.store.feed.criticalSection(async lockKey => {
             let ctr = Math.max(latest.marker.objectCtr, current.marker.objectCtr)
             for(const created of current.created) {
-                const id = ++ctr
+                const id = ctr++
                 created.id = id
-                changes.push({id, index: created.index})
+                changes.push({id, index: created.index || 0})
             }
-            try {
-                await self.store.saveChanges(changes, latest.marker, head, lockKey)
-                current.created.forEach(c => c.defId.resolve(<number>c.id))
-            } catch (err) {
-                current.created.forEach(c => c.defId.reject(err))
-                throw err
-            }
+
+            await self.store.saveChanges(changes, latest.marker, head, lockKey)
+            current.created.forEach(c => c.resolveId(<number>c.id))
         })
     }
 }

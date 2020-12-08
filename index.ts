@@ -1,5 +1,6 @@
 import { AsyncFeed, Feed } from './lib/AsyncFeed'
 import BlockStorage from './lib/BlockStorage'
+import { MergeHandler } from './lib/MergeHandler'
 import Transaction from './lib/Transaction'
 
 
@@ -21,11 +22,14 @@ export class HyperObjects {
         this.valueEncoding = opts.valueEncoding || 'binary'
     }
 
-    async transaction() {
+    async transaction<T>(executor: (tr: Transaction) => Promise<T>, mergeHandler?: MergeHandler) : Promise<T> {
+        await this.storage.ready()
         const head = await this.feed.length()
-        const tr = new Transaction(this.storage, head, {valueEncoding: this.valueEncoding})
+        const tr = new Transaction(this.storage, head, {valueEncoding: this.valueEncoding, mergeHandler: mergeHandler})
         await tr.ready()
-        return tr
+        const retval = await executor(tr)
+        await tr.commit()
+        return retval
     }
 
     

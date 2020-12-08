@@ -35,15 +35,17 @@ export default class Transaction {
             const data = this.codec.encode(value)
             index = await this.store.appendObject(data)
         }
-        return {
-            id: new Promise((resolve: (id: number) => void, reject: (err: Error) => void) => { 
-                this.created.push({index, defId: {resolve, reject}}) 
-            })
+        const obj: {id?: number} = {}
+        this.created.push({index, resolveId: resolve})
+        return obj
+
+        function resolve(id: number) {
+            obj.id = id
         }
     }
 
     async get (id: number) {
-        const head = (await this.transaction).head
+        const head = (await this.transaction).head - 1
         const index = await this.store.getObjectIndex(id, head)
         const data = await this.store.getObjectAtIndex(index)
         return this.codec.decode(data)
@@ -60,6 +62,10 @@ export default class Transaction {
     }
 
     async commit() {
+        const sumChanges = this.created.length + this.changed.length + this.deleted.length
+        if(sumChanges === 0) {
+            return // nothing changed, no need to create a transaction
+        }
         const diff: Diff = {
             created: this.created,
             changed: this.changed,
@@ -79,8 +85,8 @@ export default class Transaction {
         if(latest.index > current) {
 
         }
-    
-        await this.mergeHandler.merge(changes, diff, collisions, latest.index)
+
+        await this.mergeHandler.merge(changes, diff, collisions, latest.index - 1)
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)
@@ -100,7 +106,7 @@ export default class Transaction {
     private decodeTransactionBlock(buf: Buffer) {
         try{
             let block = Messages.Block.decode(buf)
-            if (block.content.marker) return block.content.marker
+            if (block.marker) return block.marker
             else return null
         } catch (error) {
             console.error('failed to decode transaction block: ' + buf)

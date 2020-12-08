@@ -71,11 +71,10 @@ export class AsyncFeed {
     const self = this
     while(this.lock) await this.lock
     let resolveFoo
-    const lock = this.lock = new Promise((resolve) => {resolveFoo = resolve })
-    await critical(lock)
-    await resolveFoo()
-    await this.lock
+    this.lock = new Promise((resolve) => {resolveFoo = resolve })
+    await critical(this.lock)
     this.lock = null
+    resolveFoo()
   }
 
   private async promise(foo: Function, ...args) {
