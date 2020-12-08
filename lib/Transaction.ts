@@ -70,6 +70,12 @@ export default class Transaction {
         this.deleted.push({id})
     }
 
+    rollback() {
+        this.created.splice(0, this.created.length)
+        this.changed.splice(0, this.changed.length)
+        this.deleted.splice(0, this.deleted.length)
+    }
+
     async commit() {
         const sumChanges = this.created.length + this.changed.length + this.deleted.length
         const { marker, head } = await this.transaction

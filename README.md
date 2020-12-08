@@ -19,15 +19,52 @@ const feed = somehowCreateHypercore()
 const db = new HyperObjects(feed, {valueEncoding: 'utf-8'})
 let objId
 await db.transaction(async tr => {
-    // objId.id is set AFTER the transaction is over!
-    objId = tr.create('hello world') // optional parameter
+    /**
+     * Creates a new Object
+     * @param value (optional) object value
+     * @param immediate {boolean} (default: false) if the changes should be written to the feed 
+     *                  cannot be undone, is persisted even if the transaction fails!
+     * @returns {Promise<{id: number|null}>} id is set AFTER the transaction is over!
+     */
+    objId = tr.create('hello world', false) 
 })
 
 await db.transaction(async tr => {
-    console.log(await tr.get(objId.id))
+    /**
+     * Fetches the value of an object
+     * @param key {number} object ID
+     * @param immediate {boolean} (default: false) if the changes should be written to the feed 
+     *                  cannot be undone, is persisted even if the transaction fails!
+     * @returns {Promise<any>} the object
+     */
+    const greeting = await tr.get(objId.id, false)
+    console.log(greeting)
 })
 
 await db.transaction(async tr => {
+    /**
+     * Overwrites the value of an existing object
+     * @param key {number} object ID
+     * @param value {any} object value
+     * @param immediate {boolean} (default: false) if the changes should be written to the feed 
+     *                  cannot be undone, is persisted even if the transaction fails!
+     * @returns {Promise<void>}
+     */
     await tr.set(objId.id, 'something else')
+})
+
+await db.transaction(async tr => {
+    /**
+     * Deletes an object's value (practically it's set to null)
+     * @param key {number} object ID
+     * @returns {Promise<void>}
+     */
+    await tr.delete(objId.id)
+
+    /**
+     * Undos the transaction (changes are not persisted)
+     * Theoretically it is possible to make changes after this again, the previous ones are simply removed from the queue
+     */
+    tr.rollback()
 })
 ```
