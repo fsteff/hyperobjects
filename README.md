@@ -63,7 +63,8 @@ await db.transaction(async tr => {
 
     /**
      * Undos the transaction (changes are not persisted)
-     * Theoretically it is possible to make changes after this again, the previous ones are simply removed from the queue
+     * Theoretically it is possible to make changes after this again, 
+     * the previous ones are simply removed from the queue
      */
     tr.rollback()
 })
