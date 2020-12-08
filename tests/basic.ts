@@ -53,3 +53,27 @@ tape('concurrent', async t => {
         }
     })
 })
+
+tape('collision', async t => {
+    const core = hypercore(RAM)
+    const db = new HyperObjects(core, { valueEncoding: 'utf-8' })
+    let objId
+    await db.transaction(async tr => {
+        objId = await tr.create()
+    })
+
+    const p1 = db.transaction(async tr => {
+        tr.create('sth')
+        await tr.set(objId.id, 'test1')
+    })
+
+    await db.transaction(async tr => {
+        tr.create('anything')
+        await tr.set(objId.id, 'test2')
+        await p1
+    })
+    .then(() => t.fail('expected an error'))
+    .catch(err => {
+        t.ok(err)
+    })
+})

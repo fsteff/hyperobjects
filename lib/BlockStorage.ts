@@ -199,7 +199,8 @@ export default class BlockStorage {
             addr = addr >> BUCKET_WIDTH
         }
         path.reverse()
-        path[0] -= 1 // slots of first node have an offset of 1
+        // due to the way the path is encoded, the root node has only 7 children and their ids start with 1 => slot offset of 1
+        path[0] -= 1
         return path
     }
 }

@@ -82,7 +82,6 @@ export default class Transaction {
         }
         const collisions = new Array<Collision>()
 
-        // TODO: calc diffs!
         if(latest.index > head) {
             for(let i = 0; i < latest.block.objectCtr; i += 8) {
                 const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex)         
@@ -95,7 +94,11 @@ export default class Transaction {
                     }
                 }
             }
+        }
 
+        for(const change of changes.diff) {
+            let coll = diff.changed.find(c => c.id === change.id)
+            if(coll) collisions.push({id: change.id, index1: change.index, index2: coll.index})
         }
 
         await this.mergeHandler.merge(changes, diff, collisions, rootIndex)
