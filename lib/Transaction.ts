@@ -63,6 +63,8 @@ export default class Transaction {
 
     async commit() {
         const sumChanges = this.created.length + this.changed.length + this.deleted.length
+        const { marker, head } = await this.transaction
+        const rootIndex = head - 1
         if(sumChanges === 0) {
             return // nothing changed, no need to create a transaction
         }
@@ -70,11 +72,10 @@ export default class Transaction {
             created: this.created,
             changed: this.changed,
             deleted: this.deleted,
-            marker: (await this.transaction).marker
+            marker: marker
         }
 
         const latest = await this.findLatestTransaction()
-        const current = (await this.transaction).head
         const changes: Changes = {
             diff: new Array<ChangedObject>(),
             marker: latest.block
@@ -82,19 +83,30 @@ export default class Transaction {
         const collisions = new Array<Collision>()
 
         // TODO: calc diffs!
-        if(latest.index > current) {
+        if(latest.index > head) {
+            for(let i = 0; i < latest.block.objectCtr; i += 8) {
+                const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex)         
+                const newNode = await this.store.getIndexNodeForObjectId(i, latest.index - 1)
+                if(oldNode.index !== newNode.index) {
+                    for(let slot = 0; slot < 8; slot++) {
+                        if(oldNode.content[slot] !== newNode.content[slot]) {
+                            changes.diff.push({id: i + slot, index: newNode.content[slot]})
+                        }
+                    }
+                }
+            }
 
         }
 
-        await this.mergeHandler.merge(changes, diff, collisions, latest.index - 1)
+        await this.mergeHandler.merge(changes, diff, collisions, rootIndex)
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)
     }
 
-    private async findLatestTransaction(head?: number) {
+    private async findLatestTransaction(head?: number): Promise<{block: TransactionMarker, index: number}> {
         let index = head || await this.store.feed.length()
-        let block
+        let block: TransactionMarker | null
         do {
           const buf = <Buffer> await this.store.feed.get(--index)
           block = this.decodeTransactionBlock(buf)
@@ -103,7 +115,7 @@ export default class Transaction {
         return { block, index }
     }
 
-    private decodeTransactionBlock(buf: Buffer) {
+    private decodeTransactionBlock(buf: Buffer) : TransactionMarker | null {
         try{
             let block = Messages.Block.decode(buf)
             if (block.marker) return block.marker

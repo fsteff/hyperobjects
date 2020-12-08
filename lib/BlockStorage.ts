@@ -11,21 +11,21 @@ export default class BlockStorage {
     readonly onWrite?: RWFunction
     readonly onRead?: RWFunction
     private readyPromise: Promise<void>
-    
-    constructor (feed: AsyncFeed, onWrite?: RWFunction, onRead?: RWFunction) {
+
+    constructor(feed: AsyncFeed, onWrite?: RWFunction, onRead?: RWFunction) {
         this.feed = feed
         this.onWrite = onWrite
         this.onRead = onRead
         const self = this
-        this.readyPromise = async function() {
+        this.readyPromise = async function () {
             await feed.ready()
             const length = await feed.length()
-            if(length === 1) {
+            if (length === 1) {
                 const indexNode = self.createIndexNode(0)
                 await feed.criticalSection(async lockKey => {
                     const buf = self.encodeIndexNode(indexNode)
                     const marker = self.createTransactionMarker(1, 0)
-                    await feed.append([buf, marker], {lockKey})
+                    await feed.append([buf, marker], { lockKey })
                 })
             }
         }()
@@ -36,7 +36,7 @@ export default class BlockStorage {
     }
 
     public async getObjectIndex(id: number, head?: number): Promise<number> {
-        const node = await this.getIndexNode(id, head)
+        const node = await this.getIndexNodeForObjectId(id, head)
         const slot = id & BUCKET_MASK
         if (node.content.length <= slot || node.content.length[slot] === 0) {
             throw new Error(`Object #${id} not found for transaction at ${head ? head : -1}`)
@@ -44,36 +44,40 @@ export default class BlockStorage {
         return node.content[slot]
     }
 
-    private async getIndexNode(id: number, head?: number): Promise<IndexNode> {
+    async getIndexNodeForObjectId(id: number, head?: number): Promise<IndexNode> {
         const self = this
         const prefix = id >> BUCKET_WIDTH
-        let decoded = await this.fetchNodeAt(typeof head === 'number' ? head : -1) // get head
-        if(prefix === 0) {
-            return decoded
+        return this.getIndexNode(prefix, head)
+    }
+
+    async getIndexNode(prefix: number, head?: number) : Promise<IndexNode>{
+        if (prefix === 0) {
+            return this.fetchNodeAt(typeof head === 'number' ? head : -1) // get head
         } else {
-            const path = new Array<number>()
-            let addr = prefix
-            while(addr > 0) {
-                path.push(addr & BUCKET_MASK)
-                addr = addr >> BUCKET_WIDTH
-            }
-            path.reverse()
-            path[0] -= 1 // slots of first node have an offset of 1
-            for(const slot of path) {
-                if(decoded.children.length > slot && decoded.children[slot] > 0) {
-                    decoded = await self.fetchNodeAt(decoded.children[slot])
-                } else {
-                    return self.createIndexNode(prefix)
-                }
+            const path = this.calcNodePath(prefix)
+            const node = await this.getIndexNodeByPath(path, head)
+            if(node) return node
+            else return this.createIndexNode(prefix)
+        }
+    }
+
+    async getIndexNodeByPath(path: Array<number>, head?: number) {
+        let decoded = await this.fetchNodeAt(typeof head === 'number' ? head : -1) // get head
+        for (const slot of path) {
+            if (decoded.children.length > slot && decoded.children[slot] > 0) {
+                decoded = await this.fetchNodeAt(decoded.children[slot])
+            } else {
+                return null
             }
         }
         return decoded
     }
+    
 
     private async fetchNodeAt(index: number): Promise<IndexNode> {
         const head = await (index >= 0 ? this.feed.get(index) : this.feed.head())
         const block = Messages.Block.decode(head)
-        if(!block.indexNode) {
+        if (!block.indexNode) {
             throw new Error('Block #' + (index || -1) + ' is not an indexNode block, but a ' + (block.marker ? 'marker' : 'dataBlock'))
         }
         const node = <IndexNode>block.indexNode
@@ -107,13 +111,13 @@ export default class BlockStorage {
         const self = this
         await this.feed.criticalSection(async lockKey => {
             index = await self.feed.length()
-            if(self.onWrite) {
+            if (self.onWrite) {
                 data = self.onWrite(index, data)
             }
             const block = this.encodeDataBlock(data)
-            await self.feed.append(block, {lockKey})
+            await self.feed.append(block, { lockKey })
         })
-        
+
         return index
     }
 
@@ -121,46 +125,49 @@ export default class BlockStorage {
         const nodes = new Map<number, IndexNode>()
         const addrs = new Array<number>()
         let objectCtr = 0
-        for(const change of changes) {
+        for (const change of changes) {
             objectCtr = Math.max(change.id, objectCtr)
             const addr = change.id >> BUCKET_WIDTH
             const slot = change.id & BUCKET_MASK
             let node = nodes.get(addr)
-            if(!node) {
-                node = await this.getIndexNode(change.id, head)
+            if (!node) {
+                node = await this.getIndexNodeForObjectId(change.id, head)
                 nodes.set(addr, node)
                 addrs.push(addr)
             }
             node.content[slot] = change.index
         }
-        addrs.sort((a,b) => b - a)
-        const changedNodes = <Array<IndexNode>> addrs.map(a => nodes.get(a))
+        addrs.sort((a, b) => b - a)
+        const changedNodes = <Array<IndexNode>>addrs.map(a => nodes.get(a))
 
         const bulk = new Array<Buffer>()
         let ctr = await this.feed.length()
-        while(changedNodes.length > 0) {
+        while (changedNodes.length > 0) {
             const node = changedNodes[0]
             node.index = ctr++
             bulk.push(this.encodeIndexNode(node))
-            changedNodes.splice(0 , 1)
+            changedNodes.splice(0, 1)
 
-            const addr = node.id >> BUCKET_WIDTH
-            const slot = node.id & BUCKET_MASK
             if (node.id > 0) {
+                const path = this.calcNodePath(node.id)
+                const parentId = node.id >> BUCKET_WIDTH
+                const slot = path[path.length - 1]
                 let parent
-                if(nodes.has(addr)) {
-                    parent = nodes.get(addr)
-                }
-                else {
-                    parent = await this.getIndexNode(addr)
-                    nodes.set(addr, parent)
+                if (nodes.has(parentId)) {
+                    parent = nodes.get(parentId)
+                } else {
+                    parent = await this.getIndexNodeByPath(path.slice(0, path.length - 1))
+                    if(!parent) {
+                        throw new Error('parent node must not be null')
+                    }
+                    nodes.set(parent.id, parent)
                     changedNodes.push(parent)
-                    changedNodes.sort((a,b) => b.id - a.id)
+                    changedNodes.sort((a, b) => b.id - a.id)
                 }
                 parent.children[slot] = node.index
             }
         }
-        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr))
+        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1))
         await this.feed.append(bulk, { lockKey })
     }
 
@@ -172,16 +179,27 @@ export default class BlockStorage {
         }
         return this.encodeTransactionBlock(marker)
     }
-    
+
     private encodeIndexNode(indexNode: IndexNode) {
-        return Messages.Block.encode({indexNode})
+        return Messages.Block.encode({ indexNode })
     }
 
     private encodeDataBlock(dataBlock: Buffer) {
-        return Messages.Block.encode({dataBlock})
+        return Messages.Block.encode({ dataBlock })
     }
 
     private encodeTransactionBlock(marker: TransactionMarker) {
-        return Messages.Block.encode({marker})
+        return Messages.Block.encode({ marker })
+    }
+
+    private calcNodePath(addr: number) {
+        const path = new Array<number>()
+        while (addr > 0) {
+            path.push(addr & BUCKET_MASK)
+            addr = addr >> BUCKET_WIDTH
+        }
+        path.reverse()
+        path[0] -= 1 // slots of first node have an offset of 1
+        return path
     }
 }
