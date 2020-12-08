@@ -16,7 +16,7 @@ tape('basic', async t => {
     await db.transaction(async tr => {
         for(let i = 0; i < 1000; i++) {
             const obj = await tr.get(<number>objs[i].id)
-            t.same('' + i, obj)
+            t.same(obj, '' + i)
         }
     })
 })
@@ -34,14 +34,14 @@ tape('concurrent', async t => {
 
     const p1 = db.transaction(async tr => {
         const value = 'c1'
-        objs.push({defId: await tr.create(value), value})
+        objs.push({defId: await tr.create(value, true), value})
         await tr.set(0, '#0')
         objs[0].value = '#0'
     })
 
     await db.transaction(async tr => {
         const value = 'c2'
-        objs.push({defId: await tr.create(value), value})
+        objs.push({defId: await tr.create(value, true), value})
         await tr.set(1, '#1')
         objs[1].value = '#1'
         await p1
@@ -49,7 +49,7 @@ tape('concurrent', async t => {
 
     await db.transaction(async tr => {
         for(const obj of objs) {
-            t.same(obj.value, await tr.get(<number>obj.defId.id))
+            t.same(await tr.get(<number>obj.defId.id), obj.value)
         }
     })
 })
@@ -63,12 +63,12 @@ tape('collision', async t => {
     })
 
     const p1 = db.transaction(async tr => {
-        tr.create('sth')
+        tr.create('sth', true)
         await tr.set(objId.id, 'test1')
     })
 
     await db.transaction(async tr => {
-        tr.create('anything')
+        tr.create('anything', true)
         await tr.set(objId.id, 'test2')
         await p1
     })

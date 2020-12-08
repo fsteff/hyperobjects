@@ -3,6 +3,6 @@ export type IndexNode = {id: number, children: Array<number>, content: Array<num
 export type TransactionMarker = { sequenceNr: number, objectCtr: number, timestamp?: number }
 export type CBFunction = (cb: (err: Error, result?: any) => any) => any
 export type CBFunctionP1 = (param1, cb: (err: Error, result?: any) => any) => any
-export type CreatedObject = {index: number, id?: number, resolveId: (id: number) => any}
-export type ChangedObject = {index: number, id: number}
+export type CreatedObject = {index: number, value?: Buffer, id?: number, resolveId: (id: number) => any}
+export type ChangedObject = {index: number, value?: Buffer, id: number}
 export type DeletedObject = {id: number}

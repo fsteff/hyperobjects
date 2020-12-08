@@ -29,14 +29,16 @@ export default class Transaction {
         await this.transaction
     }
 
-    async create (value?: any) {
+    async create (value?: any, immediate = false) {
         let index = 0
         if(value) {
-            const data = this.codec.encode(value)
-            index = await this.store.appendObject(data)
+            value = this.codec.encode(value)
+            if(immediate) index = await this.store.appendObject(value)
         }
         const obj: {id?: number} = {}
-        this.created.push({index, resolveId: resolve})
+        const change: CreatedObject = {index, resolveId: resolve}
+        if(!immediate) change.value = value
+        this.created.push(change)
         return obj
 
         function resolve(id: number) {
@@ -47,14 +49,21 @@ export default class Transaction {
     async get (id: number) {
         const head = (await this.transaction).head - 1
         const index = await this.store.getObjectIndex(id, head)
+        if(!index || index === 0) {
+            return null
+        }
         const data = await this.store.getObjectAtIndex(index)
         return this.codec.decode(data)
     }
 
-    async set (id: number, value: any) {
-        const data = this.codec.encode(value)
-        const index = await this.store.appendObject(data)
-        this.changed.push({id, index})
+    async set (id: number, value: any, immediate = false) {
+        let index = 0
+        value = this.codec.encode(value)
+        const change: ChangedObject = {id, index}
+        if(immediate) change.index = await this.store.appendObject(value)
+        else change.value = value
+
+        this.changed.push(change)
     }
 
     async delete (id: number) {
@@ -68,6 +77,14 @@ export default class Transaction {
         if(sumChanges === 0) {
             return // nothing changed, no need to create a transaction
         }
+
+        // flush modified objects to the feed in one large batch
+        let batch: Array<CreatedObject | ChangedObject> = this.created.filter(c => !!c.value)
+        batch = batch.concat(this.changed.filter(c => !!c.value))
+        if(batch.length > 0) {
+            await this.store.appendObjectBatch(batch)
+        }
+
         const diff: Diff = {
             created: this.created,
             changed: this.changed,

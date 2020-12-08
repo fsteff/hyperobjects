@@ -1,5 +1,5 @@
 import { AsyncFeed } from "./AsyncFeed";
-import { ChangedObject, IndexNode, RWFunction, TransactionMarker } from './types'
+import { ChangedObject, CreatedObject, IndexNode, RWFunction, TransactionMarker } from './types'
 import Messages from '../messages'
 
 const BUCKET_WIDTH = 3
@@ -95,8 +95,16 @@ export default class BlockStorage {
 
     async getObjectAtIndex(index: number) {
         const buf = <Buffer>await this.feed.get(index)
-        const block = Messages.Block.decode(buf)
-        let data = block.dataBlock
+        let data: Buffer | null
+        let block
+        try{
+            block = Messages.Block.decode(buf)
+            data = block.dataBlock
+        } catch(err) {
+            console.error('decoded message is not valid')
+            throw err
+        }
+        
         if (!data) {
             throw new Error('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'))
         }
@@ -106,7 +114,7 @@ export default class BlockStorage {
         return data
     }
 
-    async appendObject(data) {
+    async appendObject(data): Promise<number> {
         let index
         const self = this
         await this.feed.criticalSection(async lockKey => {
@@ -119,6 +127,25 @@ export default class BlockStorage {
         })
 
         return index
+    }
+
+    async appendObjectBatch(objs: Array<CreatedObject | ChangedObject>) {
+        const self = this
+        await this.feed.criticalSection(async lockKey => {
+            let objectCtr = await self.feed.length()
+            const batch = new Array<Buffer>()
+            for (let obj of objs) {
+                if(! obj.value) throw new Error('Object needs to have value set')
+                if (self.onWrite) {
+                    obj.value = self.onWrite(objectCtr, obj.value)
+                }
+                obj.index = objectCtr++
+                batch.push(self.encodeDataBlock(obj.value))
+                delete obj.value
+            }          
+            await self.feed.append(batch, { lockKey })
+        })
+        return objs
     }
 
     async saveChanges(changes: Array<ChangedObject>, lastTransaction: TransactionMarker, head: number, lockKey: Promise<void>) {
