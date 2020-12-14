@@ -24,12 +24,12 @@
     "codecs": "^2.2.0"
   },
   "devDependencies": {
+    "@types/codecs": "^2.2.1",
+    "@types/streamx": "^2.9.0",
+    "copyfiles": "^2.4.1",
+    "hypercore": "^9.6.0",
     "protocol-buffers": "^4.2.0",
     "random-access-memory": "^3.1.1",
-    "tape": "^5.0.1",
-    "hypercore": "^9.6.0",
-    "copyfiles": "^2.4.1",
-    "@types/codecs": "^2.2.0",
-    "@types/streamx": "^2.9.0"
+    "tape": "^5.0.1"
   }
 }
