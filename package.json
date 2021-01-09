@@ -24,7 +24,7 @@
     "codecs": "^2.2.0"
   },
   "devDependencies": {
-    "@types/codecs": "^2.2.1",
+    "@types/codecs": "^2.2.2",
     "@types/streamx": "^2.9.0",
     "copyfiles": "^2.4.1",
     "hypercore": "^9.6.0",

@@ -6,7 +6,8 @@ export type Feed = {
   append: CBFunctionP1,
   head: CBFunction,
   ready: CBFunction,
-  length: number
+  length: number,
+  key: Buffer
 }
 
 export class AsyncFeed {
@@ -22,7 +23,7 @@ export class AsyncFeed {
     this.readyPromise = ready().then(onReady)
 
     async function ready(): Promise<void> {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         feed.ready((err) => {
           if (err) reject(err)
           else resolve()
@@ -33,7 +34,7 @@ export class AsyncFeed {
     async function onReady(): Promise<void> {
       if (await self.length() === 0) {
         const encoded = Messages.HypercoreHeader.encode({ dataStructureType: 'hyperobjects' })
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           feed.append(encoded, err => {
             if (err) reject(err)
             else resolve()
