@@ -1,6 +1,6 @@
 {
   "name": "hyperobjects",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "object store built on hypercore",
   "scripts": {
     "generate_protobuf": "protocol-buffers -o ./dist/messages.js ./schema.proto && copyfiles messages.js dist"
