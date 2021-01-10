@@ -10,9 +10,9 @@ type ConstructOpts = { valueEncoding?: string, onWrite?: RWFunction, onRead?: RW
 type IndexNode = { id: number, children: Array<number>, content: Array<number>, index?: number }
 
 export class HyperObjects {
-    public readonly feed: AsyncFeed
-    private valueEncoding: string
-    private storage: BlockStorage
+    readonly feed: AsyncFeed
+    readonly valueEncoding: string
+    readonly storage: BlockStorage
 
 
     constructor(feed: Feed, opts?: ConstructOpts) {
