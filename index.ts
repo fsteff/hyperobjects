@@ -31,6 +31,6 @@ export class HyperObjects {
         await tr.commit()
         return retval
     }
-
-    
 }
+
+export {Transaction, MergeHandler, AsyncFeed, Feed}
