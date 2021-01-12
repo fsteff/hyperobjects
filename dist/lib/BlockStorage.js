@@ -170,7 +170,7 @@ class BlockStorage {
                     parent = nodes.get(parentId);
                 }
                 else {
-                    parent = await this.getIndexNodeByPath(path.slice(0, path.length - 1));
+                    parent = await this.getIndexNodeByPath(path.slice(0, path.length - 1), head);
                     if (!parent) {
                         throw new Error('parent node must not be null');
                     }
