@@ -21,12 +21,13 @@ class Transaction {
     async ready() {
         await this.transaction;
     }
-    async create(value, immediate = false) {
+    // for onWrite to be called immediate has to be true!
+    async create(value, immediate = false, onWrite) {
         let index = 0;
         if (value) {
             value = this.codec.encode(value);
             if (immediate)
-                index = await this.store.appendObject(value);
+                index = await this.store.appendObject(value, onWrite);
         }
         const obj = {};
         const change = { index, resolveId: resolve };
@@ -38,21 +39,24 @@ class Transaction {
             obj.id = id;
         }
     }
-    async get(id) {
+    async get(id, onRead) {
         const head = (await this.transaction).head - 1;
         const index = await this.store.getObjectIndex(id, head);
         if (!index || index === 0) {
             return null;
         }
-        const data = await this.store.getObjectAtIndex(index);
+        let data = await this.store.getObjectAtIndex(index);
+        if (onRead)
+            data = onRead(index, data);
         return this.codec.decode(data);
     }
-    async set(id, value, immediate = false) {
+    // for onWrite to be called immediate has to be true!
+    async set(id, value, immediate = false, onWrite) {
         let index = 0;
         value = this.codec.encode(value);
         const change = { id, index };
         if (immediate)
-            change.index = await this.store.appendObject(value);
+            change.index = await this.store.appendObject(value, onWrite);
         else
             change.value = value;
         this.changed.push(change);

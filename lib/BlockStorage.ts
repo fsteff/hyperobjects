@@ -114,13 +114,14 @@ export default class BlockStorage {
         return data
     }
 
-    async appendObject(data): Promise<number> {
+    async appendObject(data, onWrite?: RWFunction): Promise<number> {
         let index
         const self = this
         await this.feed.criticalSection(async lockKey => {
             index = await self.feed.length()
-            if (self.onWrite) {
-                data = self.onWrite(index, data)
+            onWrite = onWrite || self.onWrite
+            if (onWrite) {
+                data = onWrite(index, data)
             }
             const block = this.encodeDataBlock(data)
             await self.feed.append(block, { lockKey })

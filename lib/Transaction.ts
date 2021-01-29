@@ -2,9 +2,9 @@ import codecs from 'codecs'
 import Messages from '../messages'
 import BlockStorage from './BlockStorage'
 import { Changes, Collision, Diff, MergeHandler, SimpleMergeHandler } from './MergeHandler'
-import {TransactionMarker, ChangedObject, CreatedObject, DeletedObject} from './types'
+import {TransactionMarker, ChangedObject, CreatedObject, DeletedObject, RWFunction} from './types'
 
-type ConstructorOpts = { valueEncoding?: string, mergeHandler?: MergeHandler }
+export type ConstructorOpts = { valueEncoding?: string, mergeHandler?: MergeHandler }
 
 export default class Transaction {
     private readonly store: BlockStorage
@@ -29,11 +29,12 @@ export default class Transaction {
         await this.transaction
     }
 
-    async create (value?: any, immediate = false) {
+    // for onWrite to be called immediate has to be true!
+    async create (value?: any, immediate = false, onWrite?: RWFunction) {
         let index = 0
         if(value) {
             value = this.codec.encode(value)
-            if(immediate) index = await this.store.appendObject(value)
+            if(immediate) index = await this.store.appendObject(value, onWrite)
         }
         const obj: {id?: number} = {}
         const change: CreatedObject = {index, resolveId: resolve}
@@ -46,21 +47,23 @@ export default class Transaction {
         }
     }
 
-    async get (id: number) {
+    async get (id: number, onRead?: RWFunction) {
         const head = (await this.transaction).head - 1
         const index = await this.store.getObjectIndex(id, head)
         if(!index || index === 0) {
             return null
         }
-        const data = await this.store.getObjectAtIndex(index)
+        let data = await this.store.getObjectAtIndex(index)
+        if(onRead) data = onRead(index, data)
         return this.codec.decode(data)
     }
 
-    async set (id: number, value: any, immediate = false) {
+    // for onWrite to be called immediate has to be true!
+    async set (id: number, value: any, immediate = false, onWrite?: RWFunction) {
         let index = 0
         value = this.codec.encode(value)
         const change: ChangedObject = {id, index}
-        if(immediate) change.index = await this.store.appendObject(value)
+        if(immediate) change.index = await this.store.appendObject(value, onWrite)
         else change.value = value
 
         this.changed.push(change)
