@@ -33,4 +33,4 @@ export class HyperObjects {
     }
 }
 
-export {Transaction, MergeHandler, AsyncFeed, Feed}
+export {Transaction, MergeHandler, AsyncFeed, Feed, BlockStorage}

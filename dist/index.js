@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AsyncFeed = exports.Transaction = exports.HyperObjects = void 0;
+exports.BlockStorage = exports.AsyncFeed = exports.Transaction = exports.HyperObjects = void 0;
 const AsyncFeed_1 = require("./lib/AsyncFeed");
 Object.defineProperty(exports, "AsyncFeed", { enumerable: true, get: function () { return AsyncFeed_1.AsyncFeed; } });
 const BlockStorage_1 = __importDefault(require("./lib/BlockStorage"));
+exports.BlockStorage = BlockStorage_1.default;
 const Transaction_1 = __importDefault(require("./lib/Transaction"));
 exports.Transaction = Transaction_1.default;
 class HyperObjects {
