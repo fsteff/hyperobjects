@@ -91,7 +91,8 @@ class Transaction {
         const latest = await this.findLatestTransaction();
         const changes = {
             diff: new Array(),
-            marker: latest.block
+            marker: latest.block,
+            head: latest.index
         };
         const collisions = new Array();
         if (latest.index > head) {
@@ -116,6 +117,9 @@ class Transaction {
         this.created.splice(0, this.created.length);
         this.changed.splice(0, this.changed.length);
         this.deleted.splice(0, this.deleted.length);
+    }
+    async getPreviousTransactionIndex() {
+        return (await this.transaction).head;
     }
     async findLatestTransaction(head) {
         let index = head || await this.store.feed.length();

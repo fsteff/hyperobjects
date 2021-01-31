@@ -20,7 +20,7 @@ class BlockStorage {
                 const indexNode = self.createIndexNode(0);
                 await feed.criticalSection(async (lockKey) => {
                     const buf = self.encodeIndexNode(indexNode);
-                    const marker = self.createTransactionMarker(1, 0);
+                    const marker = self.createTransactionMarker(1, 0, 0);
                     await feed.append([buf, marker], { lockKey });
                 });
             }
@@ -38,7 +38,6 @@ class BlockStorage {
         return node.content[slot];
     }
     async getIndexNodeForObjectId(id, head) {
-        const self = this;
         const prefix = id >> BUCKET_WIDTH;
         return this.getIndexNode(prefix, head);
     }
@@ -182,14 +181,15 @@ class BlockStorage {
                 parent.children[slot] = node.index;
             }
         }
-        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1));
+        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1, head + 1));
         await this.feed.append(bulk, { lockKey });
     }
-    createTransactionMarker(sequenceNr, objectCtr) {
+    createTransactionMarker(sequenceNr, objectCtr, previous) {
         const marker = {
             sequenceNr,
             objectCtr,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            previous
         };
         return this.encodeTransactionBlock(marker);
     }

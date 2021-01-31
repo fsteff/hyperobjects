@@ -104,7 +104,8 @@ export default class Transaction {
         const latest = await this.findLatestTransaction()
         const changes: Changes = {
             diff: new Array<ChangedObject>(),
-            marker: latest.block
+            marker: latest.block,
+            head: latest.index
         }
         const collisions = new Array<Collision>()
 
@@ -131,6 +132,10 @@ export default class Transaction {
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)
+    }
+
+    public async getPreviousTransactionIndex() {
+        return (await this.transaction).head
     }
 
     private async findLatestTransaction(head?: number): Promise<{block: TransactionMarker, index: number}> {

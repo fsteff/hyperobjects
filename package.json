@@ -1,9 +1,9 @@
 {
   "name": "hyperobjects",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "object store built on hypercore",
   "scripts": {
-    "generate_protobuf": "protocol-buffers -o ./dist/messages.js ./schema.proto && copyfiles messages.js dist",
+    "generate_protobuf": "protocol-buffers -o ./messages.js ./schema.proto && copyfiles messages.js dist",
     "test": "tape ./dist/tests/*.js"
   },
   "repository": {

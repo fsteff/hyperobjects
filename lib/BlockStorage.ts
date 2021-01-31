@@ -24,7 +24,7 @@ export default class BlockStorage {
                 const indexNode = self.createIndexNode(0)
                 await feed.criticalSection(async lockKey => {
                     const buf = self.encodeIndexNode(indexNode)
-                    const marker = self.createTransactionMarker(1, 0)
+                    const marker = self.createTransactionMarker(1, 0, 0)
                     await feed.append([buf, marker], { lockKey })
                 })
             }
@@ -45,7 +45,6 @@ export default class BlockStorage {
     }
 
     async getIndexNodeForObjectId(id: number, head?: number): Promise<IndexNode> {
-        const self = this
         const prefix = id >> BUCKET_WIDTH
         return this.getIndexNode(prefix, head)
     }
@@ -195,15 +194,16 @@ export default class BlockStorage {
                 parent.children[slot] = node.index
             }
         }
-        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1))
+        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1, head + 1))
         await this.feed.append(bulk, { lockKey })
     }
 
-    createTransactionMarker(sequenceNr: number, objectCtr: number) {
+    createTransactionMarker(sequenceNr: number, objectCtr: number, previous: number) {
         const marker = {
             sequenceNr,
             objectCtr,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            previous
         }
         return this.encodeTransactionBlock(marker)
     }

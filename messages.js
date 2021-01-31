@@ -257,6 +257,10 @@ function defineTransactionMarker () {
       var len = encodings.varint.encodingLength(obj.timestamp)
       length += 1 + len
     }
+    if (defined(obj.previous)) {
+      var len = encodings.varint.encodingLength(obj.previous)
+      length += 1 + len
+    }
     return length
   }
 
@@ -277,6 +281,11 @@ function defineTransactionMarker () {
       encodings.varint.encode(obj.timestamp, buf, offset)
       offset += encodings.varint.encode.bytes
     }
+    if (defined(obj.previous)) {
+      buf[offset++] = 32
+      encodings.varint.encode(obj.previous, buf, offset)
+      offset += encodings.varint.encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -289,7 +298,8 @@ function defineTransactionMarker () {
     var obj = {
       sequenceNr: 0,
       objectCtr: 0,
-      timestamp: 0
+      timestamp: 0,
+      previous: 0
     }
     var found0 = false
     var found1 = false
@@ -315,6 +325,10 @@ function defineTransactionMarker () {
         break
         case 3:
         obj.timestamp = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
+        break
+        case 4:
+        obj.previous = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
         break
         default:

@@ -18,7 +18,7 @@ class SimpleMergeHandler {
                 created.id = id;
                 changes.push({ id, index: created.index || 0 });
             }
-            await self.store.saveChanges(changes, latest.marker, head, lockKey);
+            await self.store.saveChanges(changes, latest.marker, latest.head - 1, lockKey);
             current.created.forEach(c => c.resolveId(c.id));
         });
     }
