@@ -1,4 +1,5 @@
 import BlockStorage from "./BlockStorage"
+import { CollisionError } from "./Errors"
 import { TransactionMarker, CreatedObject, ChangedObject, DeletedObject } from "./types"
 
 export type Collision = {id: number, index1: number, index2: number}
@@ -23,7 +24,7 @@ export class SimpleMergeHandler implements MergeHandler {
 
     public async merge(latest: Changes, current: Diff, collisions: Array<Collision>, head: number) {
         if (collisions && collisions.length > 0) {
-            throw new Error('Collisions occured for objects ' + collisions.map(c => c.id))
+            throw new CollisionError(collisions, 'Collisions occured for objects ' + collisions.map(c => c.id))
         }
 
         const changes = latest.diff.concat(current.changed)

@@ -1,6 +1,7 @@
 import { AsyncFeed } from "./AsyncFeed";
 import { ChangedObject, CreatedObject, IndexNode, RWFunction, TransactionMarker } from './types'
 import Messages from '../messages'
+import { DecodingError, InternalError, InvalidTypeError, ObjectNotFoundError } from './Errors'
 
 const BUCKET_WIDTH = 3
 const BUCKET_SIZE = 1 << BUCKET_WIDTH
@@ -39,7 +40,7 @@ export default class BlockStorage {
         const node = await this.getIndexNodeForObjectId(id, head)
         const slot = id & BUCKET_MASK
         if (node.content.length <= slot || node.content.length[slot] === 0) {
-            throw new Error(`Object #${id} not found for transaction at ${head ? head : -1}`)
+            throw new ObjectNotFoundError(id, `Object #${id} not found for transaction at ${head ? head : -1}`)
         }
         return node.content[slot]
     }
@@ -77,7 +78,7 @@ export default class BlockStorage {
         const head = await (index >= 0 ? this.feed.get(index) : this.feed.head())
         const block = Messages.Block.decode(head)
         if (!block.indexNode) {
-            throw new Error('Block #' + (index || -1) + ' is not an indexNode block, but a ' + (block.marker ? 'marker' : 'dataBlock'))
+            throw new InvalidTypeError('Block #' + (index || -1) + ' is not an indexNode block, but a ' + (block.marker ? 'marker' : 'dataBlock'))
         }
         const node = <IndexNode>block.indexNode
         node.index = index >= 0 ? index : await this.feed.length() - 1
@@ -101,11 +102,11 @@ export default class BlockStorage {
             data = block.dataBlock
         } catch(err) {
             console.error('decoded message is not valid')
-            throw err
+            throw new DecodingError(err.msg)
         }
         
         if (!data) {
-            throw new Error('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'))
+            throw new InvalidTypeError('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'))
         }
         if (this.onRead) {
             data = this.onRead(index, data)
@@ -135,7 +136,7 @@ export default class BlockStorage {
             let objectCtr = await self.feed.length()
             const batch = new Array<Buffer>()
             for (let obj of objs) {
-                if(! obj.value) throw new Error('Object needs to have value set')
+                if(! obj.value) throw new InternalError('Object needs to have value set')
                 if (self.onWrite) {
                     obj.value = self.onWrite(objectCtr, obj.value)
                 }
@@ -185,7 +186,7 @@ export default class BlockStorage {
                 } else {
                     parent = await this.getIndexNodeByPath(path.slice(0, path.length - 1), head)
                     if(!parent) {
-                        throw new Error('parent node must not be null')
+                        throw new InternalError('parent node must not be null')
                     }
                     nodes.set(parent.id, parent)
                     changedNodes.push(parent)

@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SimpleMergeHandler = void 0;
+const Errors_1 = require("./Errors");
 class SimpleMergeHandler {
     constructor(store) {
         this.store = store;
     }
     async merge(latest, current, collisions, head) {
         if (collisions && collisions.length > 0) {
-            throw new Error('Collisions occured for objects ' + collisions.map(c => c.id));
+            throw new Errors_1.CollisionError(collisions, 'Collisions occured for objects ' + collisions.map(c => c.id));
         }
         const changes = latest.diff.concat(current.changed);
         const self = this;

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AsyncFeed = void 0;
 const messages_1 = __importDefault(require("../messages"));
+const Errors_1 = require("./Errors");
 class AsyncFeed {
     constructor(feed) {
         this.lock = null;
@@ -41,7 +42,7 @@ class AsyncFeed {
             await Promise.all(this.pending);
         }
         if (this.pending.length > 0)
-            throw new Error('pending should be zero!');
+            throw new Errors_1.InternalError('pending should be zero!');
         return this.feed.length;
     }
     ready() {

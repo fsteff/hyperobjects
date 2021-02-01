@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const messages_1 = __importDefault(require("../messages"));
+const Errors_1 = require("./Errors");
 const BUCKET_WIDTH = 3;
 const BUCKET_SIZE = 1 << BUCKET_WIDTH;
 const BUCKET_MASK = (BUCKET_SIZE - 1);
@@ -33,7 +34,7 @@ class BlockStorage {
         const node = await this.getIndexNodeForObjectId(id, head);
         const slot = id & BUCKET_MASK;
         if (node.content.length <= slot || node.content.length[slot] === 0) {
-            throw new Error(`Object #${id} not found for transaction at ${head ? head : -1}`);
+            throw new Errors_1.ObjectNotFoundError(id, `Object #${id} not found for transaction at ${head ? head : -1}`);
         }
         return node.content[slot];
     }
@@ -70,7 +71,7 @@ class BlockStorage {
         const head = await (index >= 0 ? this.feed.get(index) : this.feed.head());
         const block = messages_1.default.Block.decode(head);
         if (!block.indexNode) {
-            throw new Error('Block #' + (index || -1) + ' is not an indexNode block, but a ' + (block.marker ? 'marker' : 'dataBlock'));
+            throw new Errors_1.InvalidTypeError('Block #' + (index || -1) + ' is not an indexNode block, but a ' + (block.marker ? 'marker' : 'dataBlock'));
         }
         const node = block.indexNode;
         node.index = index >= 0 ? index : await this.feed.length() - 1;
@@ -93,10 +94,10 @@ class BlockStorage {
         }
         catch (err) {
             console.error('decoded message is not valid');
-            throw err;
+            throw new Errors_1.DecodingError(err.msg);
         }
         if (!data) {
-            throw new Error('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'));
+            throw new Errors_1.InvalidTypeError('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'));
         }
         if (this.onRead) {
             data = this.onRead(index, data);
@@ -124,7 +125,7 @@ class BlockStorage {
             const batch = new Array();
             for (let obj of objs) {
                 if (!obj.value)
-                    throw new Error('Object needs to have value set');
+                    throw new Errors_1.InternalError('Object needs to have value set');
                 if (self.onWrite) {
                     obj.value = self.onWrite(objectCtr, obj.value);
                 }
@@ -172,7 +173,7 @@ class BlockStorage {
                 else {
                     parent = await this.getIndexNodeByPath(path.slice(0, path.length - 1), head);
                     if (!parent) {
-                        throw new Error('parent node must not be null');
+                        throw new Errors_1.InternalError('parent node must not be null');
                     }
                     nodes.set(parent.id, parent);
                     changedNodes.push(parent);

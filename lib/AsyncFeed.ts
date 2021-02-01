@@ -1,4 +1,5 @@
 import Messages from '../messages'
+import { InternalError } from './Errors'
 import {CBFunction, CBFunctionP1} from './types'
 
 export type Feed = {
@@ -48,7 +49,7 @@ export class AsyncFeed {
     while (this.pending.length > 0) {
       await Promise.all(this.pending)
     }
-    if (this.pending.length > 0) throw new Error('pending should be zero!')
+    if (this.pending.length > 0) throw new InternalError('pending should be zero!')
     return this.feed.length
   }
 

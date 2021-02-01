@@ -1,6 +1,7 @@
 import codecs from 'codecs'
 import Messages from '../messages'
 import BlockStorage from './BlockStorage'
+import { InternalError } from './Errors'
 import { Changes, Collision, Diff, MergeHandler, SimpleMergeHandler } from './MergeHandler'
 import {TransactionMarker, ChangedObject, CreatedObject, DeletedObject, RWFunction} from './types'
 
@@ -145,7 +146,7 @@ export default class Transaction {
           const buf = <Buffer> await this.store.feed.get(--index)
           block = this.decodeTransactionBlock(buf)
         } while (! block && index > 0)
-        if (! block) throw new Error('no transaction marker found')
+        if (! block) throw new InternalError('no transaction marker found')
         return { block, index }
     }
 

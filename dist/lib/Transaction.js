@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const codecs_1 = __importDefault(require("codecs"));
 const messages_1 = __importDefault(require("../messages"));
+const Errors_1 = require("./Errors");
 const MergeHandler_1 = require("./MergeHandler");
 class Transaction {
     constructor(store, head, opts) {
@@ -129,7 +130,7 @@ class Transaction {
             block = this.decodeTransactionBlock(buf);
         } while (!block && index > 0);
         if (!block)
-            throw new Error('no transaction marker found');
+            throw new Errors_1.InternalError('no transaction marker found');
         return { block, index };
     }
     decodeTransactionBlock(buf) {
