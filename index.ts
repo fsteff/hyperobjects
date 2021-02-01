@@ -2,6 +2,7 @@ import { AsyncFeed, Feed } from './lib/AsyncFeed'
 import BlockStorage from './lib/BlockStorage'
 import { MergeHandler } from './lib/MergeHandler'
 import Transaction from './lib/Transaction'
+import * as Errors from './lib/Errors'
 
 
 
@@ -33,4 +34,4 @@ export class HyperObjects {
     }
 }
 
-export {Transaction, MergeHandler, AsyncFeed, Feed, BlockStorage}
+export {Transaction, MergeHandler, AsyncFeed, Feed, BlockStorage, Errors}
