@@ -1,4 +1,4 @@
-import { Collision } from "./MergeHandler"
+import { Collision as HyperObjectsErrors } from "./MergeHandler"
 
 export class DecodingError extends Error {
     readonly index: number
@@ -31,9 +31,9 @@ export class InternalError extends Error {
 }
 
 export class CollisionError extends Error {
-    readonly collisions: Array<Collision>
+    readonly collisions: Array<HyperObjectsErrors>
 
-    constructor(collisions: Array<Collision>, msg: string) {
+    constructor(collisions: Array<HyperObjectsErrors>, msg: string) {
         super(msg)
         this.collisions = collisions
     }
