@@ -102,7 +102,7 @@ export default class BlockStorage {
             data = block.dataBlock
         } catch(err) {
             console.error('decoded message is not valid')
-            throw new DecodingError(err.msg)
+            throw new DecodingError(index, err.msg)
         }
         
         if (!data) {

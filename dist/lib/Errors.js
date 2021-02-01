@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CollisionError = exports.InternalError = exports.ObjectNotFoundError = exports.InvalidTypeError = exports.DecodingError = void 0;
 class DecodingError extends Error {
-    constructor(msg) {
+    constructor(index, msg) {
         super(msg);
+        this.index = index;
     }
 }
 exports.DecodingError = DecodingError;

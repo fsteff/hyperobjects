@@ -1,8 +1,11 @@
 import { Collision } from "./MergeHandler"
 
 export class DecodingError extends Error {
-    constructor(msg: string) {
+    readonly index: number
+
+    constructor(index: number, msg: string) {
         super(msg)
+        this.index = index
     }
 }
 
