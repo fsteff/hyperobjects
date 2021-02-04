@@ -9,9 +9,9 @@ export type ConstructorOpts = { valueEncoding?: string, mergeHandler?: MergeHand
 
 export default class Transaction {
     private readonly store: BlockStorage
-    private readonly transaction: Promise<{marker: TransactionMarker, head: number}>
     private readonly codec: any
     private readonly mergeHandler: MergeHandler
+    private transaction: Promise<{marker: TransactionMarker, head: number}>
 
     private changed: Array<ChangedObject> = []
     private created: Array<CreatedObject> = []
@@ -133,6 +133,9 @@ export default class Transaction {
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)
+        // reset to new transaction
+        this.transaction = this.findLatestTransaction()
+            .then(({ block, index }) => { return {marker: block, head: index}})
     }
 
     public async getPreviousTransactionIndex() {

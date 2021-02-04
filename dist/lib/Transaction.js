@@ -118,6 +118,9 @@ class Transaction {
         this.created.splice(0, this.created.length);
         this.changed.splice(0, this.changed.length);
         this.deleted.splice(0, this.deleted.length);
+        // reset to new transaction
+        this.transaction = this.findLatestTransaction()
+            .then(({ block, index }) => { return { marker: block, head: index }; });
     }
     async getPreviousTransactionIndex() {
         return (await this.transaction).head;
