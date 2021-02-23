@@ -125,6 +125,9 @@ class Transaction {
     async getPreviousTransactionIndex() {
         return (await this.transaction).head;
     }
+    async getPreviousTransactionMarker() {
+        return Object.assign({}, (await this.transaction).marker);
+    }
     async findLatestTransaction(head) {
         let index = head || await this.store.feed.length();
         let block;

@@ -142,6 +142,10 @@ export default class Transaction {
         return (await this.transaction).head
     }
 
+    public async getPreviousTransactionMarker() {
+        return Object.assign({}, (await this.transaction).marker)
+    }
+
     private async findLatestTransaction(head?: number): Promise<{block: TransactionMarker, index: number}> {
         let index = head || await this.store.feed.length()
         let block: TransactionMarker | null

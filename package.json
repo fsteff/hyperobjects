@@ -1,6 +1,6 @@
 {
   "name": "hyperobjects",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "object store built on hypercore",
   "scripts": {
     "generate_protobuf": "protocol-buffers -o ./messages.js ./schema.proto && copyfiles messages.js dist",
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/fsteff/hyperobjects#readme",
   "dependencies": {
+    "protocol-buffers": "^4.2.0",
     "codecs": "^2.2.0"
   },
   "devDependencies": {
@@ -29,7 +30,6 @@
     "@types/streamx": "^2.9.0",
     "copyfiles": "^2.4.1",
     "hypercore": "^9.6.0",
-    "protocol-buffers": "^4.2.0",
     "random-access-memory": "^3.1.1",
     "tape": "^5.0.1",
     "typescript": "^4.1.3"
