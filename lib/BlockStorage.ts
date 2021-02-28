@@ -36,6 +36,18 @@ export default class BlockStorage {
         return this.readyPromise
     }
 
+    public get writeable() {
+        return this.feed.feed.writeable
+    }
+
+    public get key() {
+        return this.feed.feed.key
+    }
+
+    public get discoveryKey() {
+        return this.feed.feed.discoveryKey
+    }
+
     public async getObjectIndex(id: number, head?: number): Promise<number> {
         const node = await this.getIndexNodeForObjectId(id, head)
         const slot = id & BUCKET_MASK

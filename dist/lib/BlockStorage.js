@@ -30,6 +30,15 @@ class BlockStorage {
     async ready() {
         return this.readyPromise;
     }
+    get writeable() {
+        return this.feed.feed.writeable;
+    }
+    get key() {
+        return this.feed.feed.key;
+    }
+    get discoveryKey() {
+        return this.feed.feed.discoveryKey;
+    }
     async getObjectIndex(id, head) {
         const node = await this.getIndexNodeForObjectId(id, head);
         const slot = id & BUCKET_MASK;
