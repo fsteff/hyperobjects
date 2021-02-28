@@ -8,9 +8,9 @@ import {TransactionMarker, ChangedObject, CreatedObject, DeletedObject, RWFuncti
 export type ConstructorOpts = { valueEncoding?: string, mergeHandler?: MergeHandler }
 
 export default class Transaction {
-    private readonly store: BlockStorage
-    private readonly codec: any
-    private readonly mergeHandler: MergeHandler
+    readonly store: BlockStorage
+    readonly codec: any
+    readonly mergeHandler: MergeHandler
     private transaction: Promise<{marker: TransactionMarker, head: number}>
 
     private changed: Array<ChangedObject> = []

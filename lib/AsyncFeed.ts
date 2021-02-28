@@ -8,7 +8,9 @@ export type Feed = {
   head: CBFunction,
   ready: CBFunction,
   length: number,
-  key: Buffer
+  key: Buffer,
+  writeable: boolean,
+  discoveryKey: Buffer
 }
 
 export class AsyncFeed {
