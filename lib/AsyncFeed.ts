@@ -9,7 +9,7 @@ export type Feed = {
   ready: CBFunction,
   length: number,
   key: Buffer,
-  writeable: boolean,
+  writable: boolean,
   discoveryKey: Buffer
 }
 

@@ -30,8 +30,8 @@ class BlockStorage {
     async ready() {
         return this.readyPromise;
     }
-    get writeable() {
-        return this.feed.feed.writeable;
+    get writable() {
+        return this.feed.feed.writable;
     }
     get key() {
         return this.feed.feed.key;
@@ -149,7 +149,7 @@ class BlockStorage {
     async saveChanges(changes, lastTransaction, head, lockKey) {
         const nodes = new Map();
         const addrs = new Array();
-        let objectCtr = 0;
+        let objectCtr = lastTransaction.objectCtr;
         for (const change of changes) {
             objectCtr = Math.max(change.id, objectCtr);
             const addr = change.id >> BUCKET_WIDTH;
