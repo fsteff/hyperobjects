@@ -12,7 +12,7 @@ export type Diff = {
 }
 
 export interface MergeHandler {
-    merge(meanwhile: Changes, current: Diff, collisions: Array<Collision>, head: number)
+    merge(meanwhile: Changes, current: Diff, collisions: Array<Collision>)
 }
 
 export class SimpleMergeHandler implements MergeHandler {
@@ -22,7 +22,7 @@ export class SimpleMergeHandler implements MergeHandler {
         this.store = store
     }
 
-    public async merge(latest: Changes, current: Diff, collisions: Array<Collision>, head: number) {
+    public async merge(latest: Changes, current: Diff, collisions: Array<Collision>) {
         if (collisions && collisions.length > 0) {
             throw new CollisionError(collisions, 'Collisions occured for objects ' + collisions.map(c => c.id))
         }

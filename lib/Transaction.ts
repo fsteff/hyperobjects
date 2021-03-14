@@ -129,7 +129,7 @@ export default class Transaction {
             if(coll) collisions.push({id: change.id, index1: change.index, index2: coll.index})
         }
 
-        await this.mergeHandler.merge(changes, diff, collisions, rootIndex)
+        await this.mergeHandler.merge(changes, diff, collisions)
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)

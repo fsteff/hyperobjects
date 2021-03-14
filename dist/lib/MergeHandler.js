@@ -6,7 +6,7 @@ class SimpleMergeHandler {
     constructor(store) {
         this.store = store;
     }
-    async merge(latest, current, collisions, head) {
+    async merge(latest, current, collisions) {
         if (collisions && collisions.length > 0) {
             throw new Errors_1.CollisionError(collisions, 'Collisions occured for objects ' + collisions.map(c => c.id));
         }
