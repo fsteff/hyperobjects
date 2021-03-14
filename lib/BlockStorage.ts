@@ -126,7 +126,7 @@ export default class BlockStorage {
         return data
     }
 
-    async appendObject(data, onWrite?: RWFunction): Promise<number> {
+    async appendObject(data: Buffer, onWrite?: RWFunction): Promise<number> {
         let index
         const self = this
         await this.feed.criticalSection(async lockKey => {
@@ -166,7 +166,7 @@ export default class BlockStorage {
         const addrs = new Array<number>()
         let objectCtr = lastTransaction.objectCtr
         for (const change of changes) {
-            objectCtr = Math.max(change.id, objectCtr)
+            objectCtr = Math.max(change.id + 1, objectCtr)
             const addr = change.id >> BUCKET_WIDTH
             const slot = change.id & BUCKET_MASK
             let node = nodes.get(addr)
@@ -207,7 +207,7 @@ export default class BlockStorage {
                 parent.children[slot] = node.index
             }
         }
-        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1, head + 1))
+        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr, head + 1))
         await this.feed.append(bulk, { lockKey })
     }
 

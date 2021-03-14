@@ -151,7 +151,7 @@ class BlockStorage {
         const addrs = new Array();
         let objectCtr = lastTransaction.objectCtr;
         for (const change of changes) {
-            objectCtr = Math.max(change.id, objectCtr);
+            objectCtr = Math.max(change.id + 1, objectCtr);
             const addr = change.id >> BUCKET_WIDTH;
             const slot = change.id & BUCKET_MASK;
             let node = nodes.get(addr);
@@ -191,7 +191,7 @@ class BlockStorage {
                 parent.children[slot] = node.index;
             }
         }
-        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr + 1, head + 1));
+        bulk.push(this.createTransactionMarker(lastTransaction.sequenceNr + 1, objectCtr, head + 1));
         await this.feed.append(bulk, { lockKey });
     }
     createTransactionMarker(sequenceNr, objectCtr, previous) {
