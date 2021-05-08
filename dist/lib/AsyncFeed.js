@@ -24,7 +24,7 @@ class AsyncFeed {
             });
         }
         async function onReady() {
-            if (await self.length() === 0) {
+            if (await self.length() === 0 && self.feed.writable) {
                 const encoded = messages_1.default.HypercoreHeader.encode({ dataStructureType: 'hyperobjects' });
                 await new Promise((resolve, reject) => {
                     feed.append(encoded, err => {
@@ -36,6 +36,11 @@ class AsyncFeed {
                 });
             }
         }
+    }
+    async update(minLength) {
+        await new Promise((resolve, reject) => {
+            this.feed.update(minLength, err => err ? reject(err) : resolve(undefined));
+        });
     }
     async length() {
         while (this.pending.length > 0) {
