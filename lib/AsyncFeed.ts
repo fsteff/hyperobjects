@@ -2,16 +2,21 @@ import Messages from '../messages'
 import { InternalError } from './Errors'
 import {CBFunction, CBFunctionP1} from './types'
 
+export type Peer = {remoteAddress: string, type: string, remoteKey: Buffer}
+
 export type Feed = {
   get: CBFunctionP1,
   append: CBFunctionP1,
   head: CBFunction,
   ready: CBFunction,
-  update: CBFunctionP1 | CBFunction
+  update: CBFunctionP1 | CBFunction,
+  on(event: string, cb: (...args) => any): void,
+  once(event: string, cb: (...args) => any): void,
   length: number,
   key: Buffer,
   writable: boolean,
-  discoveryKey: Buffer
+  discoveryKey: Buffer,
+  peers: Peer[]
 }
 
 export class AsyncFeed {
@@ -50,7 +55,7 @@ export class AsyncFeed {
 
   async update(minLength?: number) {
     await new Promise((resolve, reject) => {
-      this.feed.update(minLength, err => err ? reject(err) : resolve(undefined))
+      this.feed.update({minLength, ifAvailable: true}, err => err ? reject(err) : resolve(undefined))
     })
   }
 
