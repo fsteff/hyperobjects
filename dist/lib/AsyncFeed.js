@@ -39,7 +39,7 @@ class AsyncFeed {
     }
     async update(minLength) {
         await new Promise((resolve, reject) => {
-            this.feed.update(minLength, err => err ? reject(err) : resolve(undefined));
+            this.feed.update({ minLength, ifAvailable: true }, err => err ? reject(err) : resolve(undefined));
         });
     }
     async length() {
