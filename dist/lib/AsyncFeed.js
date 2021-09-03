@@ -37,9 +37,27 @@ class AsyncFeed {
             }
         }
     }
-    async update(minLength) {
-        await new Promise((resolve, reject) => {
-            this.feed.update({ minLength, ifAvailable: true }, err => err ? reject(err) : resolve(undefined));
+    async update(minLength, timeout) {
+        let done = false;
+        return Promise.all([new Promise((resolve, reject) => {
+                this.feed.update({ minLength, ifAvailable: true }, err => {
+                    done = true;
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(undefined);
+                });
+            }),
+            new Promise((resolve, reject) => {
+                if (timeout) {
+                    setTimeout(() => done ? resolve(undefined) : reject(new Error('Timeout (' + timeout + 'ms)')));
+                }
+                else {
+                    resolve(undefined);
+                }
+            })
+        ]).catch(err => {
+            throw new Error('failed to update feed ' + this.feed.key.toString('hex') + ' because of error: ' + err.message);
         });
     }
     async length() {
