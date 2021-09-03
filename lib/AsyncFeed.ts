@@ -64,7 +64,7 @@ export class AsyncFeed {
       }),
       new Promise((resolve, reject) => {
         if(timeout) {
-          setTimeout(() => done ? resolve(undefined) : reject(new Error('Timeout (' + timeout +'ms)')))
+          setTimeout(() => done ? resolve(undefined) : reject(new Error('Timeout (' + timeout +'ms)')), timeout)
         } else {
           resolve(undefined)
         }
