@@ -12,7 +12,7 @@ export type Diff = {
 }
 
 export interface MergeHandler {
-    merge(meanwhile: Changes, current: Diff, collisions: Array<Collision>)
+    merge(meanwhile: Changes, current: Diff, collisions: Array<Collision>, lockKey: Promise<void>): Promise<void>
 }
 
 export class SimpleMergeHandler implements MergeHandler {
@@ -22,23 +22,21 @@ export class SimpleMergeHandler implements MergeHandler {
         this.store = store
     }
 
-    public async merge(latest: Changes, current: Diff, collisions: Array<Collision>) {
+    // merge has to be in a critical section
+    public async merge(latest: Changes, current: Diff, collisions: Array<Collision>, lockKey: Promise<void>) {
         if (collisions && collisions.length > 0) {
             throw new CollisionError(collisions, 'Collisions occured for objects ' + collisions.map(c => c.id))
         }
 
         const changes = latest.diff.concat(current.changed)
         const self = this
-        return this.store.feed.criticalSection(async lockKey => {
-            let ctr = Math.max(latest.marker.objectCtr, current.marker.objectCtr)
-            for(const created of current.created) {
-                const id = ctr++
-                created.id = id
-                changes.push({id, index: created.index || 0})
-            }
+        let ctr = Math.max(latest.marker.objectCtr, current.marker.objectCtr)
+        for(const created of current.created) {
+            const id = ctr++
+            created.id = id
+            changes.push({id, index: created.index || 0})
+        }
 
-            await self.store.saveChanges(changes, latest.marker, latest.head - 1, lockKey)
-            current.created.forEach(c => c.resolveId(<number>c.id))
-        })
+        await self.store.saveChanges(changes, latest.marker, latest.head - 1, lockKey)
     }
 }

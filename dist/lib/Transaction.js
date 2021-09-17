@@ -89,32 +89,35 @@ class Transaction {
             deleted: this.deleted,
             marker: marker
         };
-        const latest = await this.findLatestTransaction();
-        const changes = {
-            diff: new Array(),
-            marker: latest.block,
-            head: latest.index
-        };
-        const collisions = new Array();
-        if (latest.index > head) {
-            for (let i = 0; i < latest.block.objectCtr; i += 8) {
-                const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex);
-                const newNode = await this.store.getIndexNodeForObjectId(i, latest.index - 1);
-                if (oldNode.index !== newNode.index) {
-                    for (let slot = 0; slot < 8; slot++) {
-                        if (oldNode.content[slot] !== newNode.content[slot]) {
-                            changes.diff.push({ id: i + slot, index: newNode.content[slot] });
+        await this.store.feed.criticalSection(async (lockKey) => {
+            const latest = await this.findLatestTransaction();
+            const changes = {
+                diff: new Array(),
+                marker: latest.block,
+                head: latest.index
+            };
+            const collisions = new Array();
+            if (latest.index > head) {
+                for (let i = 0; i < latest.block.objectCtr; i += 8) {
+                    const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex);
+                    const newNode = await this.store.getIndexNodeForObjectId(i, latest.index - 1);
+                    if (oldNode.index !== newNode.index) {
+                        for (let slot = 0; slot < 8; slot++) {
+                            if (oldNode.content[slot] !== newNode.content[slot]) {
+                                changes.diff.push({ id: i + slot, index: newNode.content[slot] });
+                            }
                         }
                     }
                 }
             }
-        }
-        for (const change of changes.diff) {
-            let coll = diff.changed.find(c => c.id === change.id);
-            if (coll)
-                collisions.push({ id: change.id, index1: change.index, index2: coll.index });
-        }
-        await this.mergeHandler.merge(changes, diff, collisions);
+            for (const change of changes.diff) {
+                let coll = diff.changed.find(c => c.id === change.id);
+                if (coll)
+                    collisions.push({ id: change.id, index1: change.index, index2: coll.index });
+            }
+            await this.mergeHandler.merge(changes, diff, collisions, lockKey);
+        });
+        this.created.forEach(c => c.resolveId(c.id));
         this.created.splice(0, this.created.length);
         this.changed.splice(0, this.changed.length);
         this.deleted.splice(0, this.deleted.length);

@@ -103,7 +103,7 @@ class BlockStorage {
         }
         catch (err) {
             console.error('decoded message is not valid');
-            throw new Errors_1.DecodingError(index, err.msg);
+            throw new Errors_1.DecodingError(index, err.message);
         }
         if (!data) {
             throw new Errors_1.InvalidTypeError('Block #' + index + ' is not a data block, but a ' + (block.marker ? 'marker' : 'node'));

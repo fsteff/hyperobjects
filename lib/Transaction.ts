@@ -88,6 +88,7 @@ export default class Transaction {
             return // nothing changed, no need to create a transaction
         }
 
+        
         // flush modified objects to the feed in one large batch
         let batch: Array<CreatedObject | ChangedObject> = this.created.filter(c => !!c.value)
         batch = batch.concat(this.changed.filter(c => !!c.value))
@@ -101,35 +102,39 @@ export default class Transaction {
             deleted: this.deleted,
             marker: marker
         }
+        await this.store.feed.criticalSection(async lockKey => {
 
-        const latest = await this.findLatestTransaction()
-        const changes: Changes = {
-            diff: new Array<ChangedObject>(),
-            marker: latest.block,
-            head: latest.index
-        }
-        const collisions = new Array<Collision>()
+            const latest = await this.findLatestTransaction()
+            const changes: Changes = {
+                diff: new Array<ChangedObject>(),
+                marker: latest.block,
+                head: latest.index
+            }
+            const collisions = new Array<Collision>()
 
-        if(latest.index > head) {
-            for(let i = 0; i < latest.block.objectCtr; i += 8) {
-                const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex)         
-                const newNode = await this.store.getIndexNodeForObjectId(i, latest.index - 1)
-                if(oldNode.index !== newNode.index) {
-                    for(let slot = 0; slot < 8; slot++) {
-                        if(oldNode.content[slot] !== newNode.content[slot]) {
-                            changes.diff.push({id: i + slot, index: newNode.content[slot]})
+            if(latest.index > head) {
+                for(let i = 0; i < latest.block.objectCtr; i += 8) {
+                    const oldNode = await this.store.getIndexNodeForObjectId(i, rootIndex)         
+                    const newNode = await this.store.getIndexNodeForObjectId(i, latest.index - 1)
+                    if(oldNode.index !== newNode.index) {
+                        for(let slot = 0; slot < 8; slot++) {
+                            if(oldNode.content[slot] !== newNode.content[slot]) {
+                                changes.diff.push({id: i + slot, index: newNode.content[slot]})
+                            }
                         }
                     }
                 }
             }
-        }
 
-        for(const change of changes.diff) {
-            let coll = diff.changed.find(c => c.id === change.id)
-            if(coll) collisions.push({id: change.id, index1: change.index, index2: coll.index})
-        }
+            for(const change of changes.diff) {
+                let coll = diff.changed.find(c => c.id === change.id)
+                if(coll) collisions.push({id: change.id, index1: change.index, index2: coll.index})
+            }
 
-        await this.mergeHandler.merge(changes, diff, collisions)
+            await this.mergeHandler.merge(changes, diff, collisions, lockKey)
+        })
+        this.created.forEach(c => c.resolveId(<number>c.id))
+
         this.created.splice(0, this.created.length)
         this.changed.splice(0, this.changed.length)
         this.deleted.splice(0, this.deleted.length)
