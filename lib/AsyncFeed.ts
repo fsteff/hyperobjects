@@ -12,6 +12,8 @@ export type Feed = {
   update: CBFunctionP1 | CBFunction,
   on(event: string, cb: (...args) => any): void,
   once(event: string, cb: (...args) => any): void,
+  download(range?: {start?: number, end?: number, linear?: boolean}, cb?: CBFunction): number,
+  undownload(downloadId: number): void,
   length: number,
   key: Buffer,
   writable: boolean,
