@@ -15,6 +15,7 @@ export type Feed = {
   download(range?: {start?: number, end?: number, linear?: boolean}, cb?: CBFunction): number,
   undownload(downloadId: number): void,
   length: number,
+  byteLength: number,
   key: Buffer,
   writable: boolean,
   discoveryKey: Buffer,
